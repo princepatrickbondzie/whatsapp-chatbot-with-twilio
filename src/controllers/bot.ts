@@ -2,27 +2,33 @@
 import { Request, Response } from "express";
 import User, { IUser } from "../models/User";
 import { sendErrorMessage, sendMessage } from "../utils/twilio";
+import twilio = require("twilio");
+import { Configs } from "../config/config";
+
+const client = twilio(Configs.TWILIO_ACCOUNT_SID, Configs.TWILIO_AUTH_TOKEN);
+const MessagingResponse = twilio.twiml.MessagingResponse;
 
 async function bot(req: Request, res: Response) {
-  const { message, from, name } = req.body;
+  const twiml = new MessagingResponse();
+  const { ProfileName, WaId, Body, From } = req.body;
   const currentTime = new Date();
   let responseMessage = "";
 
   try {
     // Find the user in the database based on their phone number (from)
-    let user: IUser | null = await User.findOne({ number: from });
+    let user: IUser | null = await User.findOne({ number: WaId });
 
     // If the user is new, save their details in the database
     if (!user) {
       user = await User.create({
-        number: from,
-        name: name,
+        number: WaId,
+        name: ProfileName,
         lastMessageTime: currentTime,
         conversations: [
           {
             initialResponse: "",
-            userMessage: message,
-            nextResponse: `Hello ${name}, welcome to Express live chat. How can we assist you?`,
+            userMessage: Body,
+            nextResponse: `Hello, welcome to Express live chat. How can we assist you?`,
           },
         ],
       });
@@ -38,8 +44,8 @@ async function bot(req: Request, res: Response) {
         user.lastMessageTime = currentTime;
         user.conversations.push({
           initialResponse: "",
-          userMessage: message,
-          nextResponse: `Hello ${name}, welcome back to Express live chat. How can we assist you?`,
+          userMessage: Body,
+          nextResponse: `Hello, welcome back to Express live chat. How can we assist you?`,
         });
 
         responseMessage =
@@ -51,16 +57,15 @@ async function bot(req: Request, res: Response) {
         // Based on the previous response, decide the next response
         if (
           lastConversation.nextResponse ===
-            `Hello ${name}, welcome to Express live chat. How can we assist you?` ||
+            `Hello, welcome to Express live chat. How can we assist you?` ||
           lastConversation.nextResponse ===
-            `Hello ${name}, welcome back to Express live chat. How can we assist you?` ||
-          lastConversation.nextResponse ===
-            `Hello ${name}, How can we assist you?`
+            `Hello, welcome back to Express live chat. How can we assist you?` ||
+          lastConversation.nextResponse === `Hello, How can we assist you?`
         ) {
           user.lastMessageTime = currentTime;
           user.conversations.push({
             initialResponse: lastConversation.nextResponse,
-            userMessage: message,
+            userMessage: Body,
             nextResponse:
               "Thank you for the message. Kindly enter your phone number.",
           });
@@ -74,7 +79,7 @@ async function bot(req: Request, res: Response) {
           user.lastMessageTime = currentTime;
           user.conversations.push({
             initialResponse: lastConversation.nextResponse,
-            userMessage: message,
+            userMessage: Body,
             nextResponse:
               "Thank you for your request. A customer agent will contact you shortly. You can also view more of our services on www.stiiestate.com",
           });
@@ -85,8 +90,8 @@ async function bot(req: Request, res: Response) {
           user.lastMessageTime = currentTime;
           user.conversations.push({
             initialResponse: "",
-            userMessage: message,
-            nextResponse: `Hello ${name}, How can we assist you?`,
+            userMessage: Body,
+            nextResponse: `Hello, How can we assist you?`,
           });
 
           responseMessage =
@@ -97,10 +102,14 @@ async function bot(req: Request, res: Response) {
 
     // Save the updated conversation history in the database
     await user.save();
-    sendMessage(responseMessage);
+    twiml.message(responseMessage);
+    res.writeHead(500, { "Content-Type": "text/xml" });
+    res.end(twiml.toString());
   } catch (error) {
     console.error("Error processing the message:", error);
-    sendErrorMessage("Sorry, something went wrong. Please try again later.");
+    twiml.message("Sorry something went wrong, please try again later.");
+    res.writeHead(500, { "Content-Type": "text/xml" });
+    res.end(twiml.toString());
   }
 }
 

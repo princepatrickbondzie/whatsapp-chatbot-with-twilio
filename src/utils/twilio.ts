@@ -13,6 +13,20 @@ const sendMessage =
     res.end(twiml.toString());
   };
 
+async function sendResponse(to: string, message: string) {
+  try {
+    const response = await client.messages.create({
+      body: message,
+      from: `whatsapp:+14155238886`,
+      to: `whatsapp:${to}`,
+    });
+
+    console.log("Message sent successfully:", response.sid);
+  } catch (error) {
+    console.error("Error sending message:", error);
+  }
+}
+
 const sendErrorMessage =
   (message: string) => (res: Response<any, Record<string, any>>) => {
     const twiml = new MessagingResponse();
@@ -21,4 +35,4 @@ const sendErrorMessage =
     res.end(twiml.toString());
   };
 
-export { sendMessage, sendErrorMessage };
+export { sendMessage, sendErrorMessage, sendResponse };
