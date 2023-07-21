@@ -6,7 +6,6 @@ import botRoutes from "./routes/bot/bot.routes";
 
 const app = express();
 app.use(express.json());
-// Parse incoming Twilio request
 app.use(express.urlencoded({ extended: false }));
 app.use(cors());
 

@@ -1,7 +1,6 @@
 // bot.ts
 import { Request, Response } from "express";
 import User, { IUser } from "../models/User";
-import { sendErrorMessage, sendMessage } from "../utils/twilio";
 import twilio = require("twilio");
 import { Configs } from "../config/config";
 
