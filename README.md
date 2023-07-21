@@ -16,7 +16,7 @@ This project is a WhatsApp chatbot built using Node.js, Express, TypeScript, Mon
 
 Before running the project, ensure you have the following installed:
 
-- Node.js (v12 or higher)
+- Node.js (v16 or higher)
 - MongoDB
 - Twilio account with the Account SID and Auth Token
 
