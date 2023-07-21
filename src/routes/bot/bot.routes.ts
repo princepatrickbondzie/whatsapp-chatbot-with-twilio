@@ -1,11 +1,8 @@
 import express from "express";
-import validator from "../../middleware/validator";
 import { bot } from "../../controllers/bot";
-import schema from "./schema";
-// import webhookMiddleware from "../../middleware/extractor";
 
 const router = express.Router();
 
-router.post("/webhook", validator(schema.payload), bot);
+router.post("/webhook", bot);
 
 export default router;
